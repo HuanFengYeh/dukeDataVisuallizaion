@@ -227,6 +227,13 @@
         
         /* Mobile device optimization */
         @media (max-width: 768px) {
+            #map-container {
+                aspect-ratio: 1/1;
+                height: auto !important;
+                min-height: 80vh;
+                max-width: 100vw;
+                margin: 0 auto;
+            }
             .node.level1 {
                 min-width: 160px;
                 min-height: 160px;
@@ -253,9 +260,14 @@
                 left: 30px;
             }
             .node-content {
-                max-width: 95%;
-                max-height: 90vh;
+                width: 90%;
+                max-width: 90%;
+                max-height: 80vh;
                 padding: 20px;
+                top: 45%;
+            }
+            .quotes-container {
+                max-height: 50vh;
             }
             .quote-card {
                 padding: 15px 10px;
@@ -378,12 +390,25 @@
                     
                     const nodeElement = createNodeElement(node);
                     
-                    // Random initial position, distributed across the viewport
-                    const x = Math.random() * (containerWidth - 200) + 100;
-                    const y = Math.random() * (containerHeight - 200) + 100;
+                    // Position nodes differently on mobile to prevent long vertical layout
+                    if (window.innerWidth <= 768) {
+                        // Distribute nodes more evenly on mobile
+                        const radius = Math.min(containerWidth, containerHeight) * 0.35;
+                        const angle = (index / childNodes.length) * Math.PI * 2;
+                        const x = centerX + radius * Math.cos(angle) - 50;
+                        const y = centerY + radius * Math.sin(angle) - 50;
+                        
+                        nodeElement.style.left = `${x}px`;
+                        nodeElement.style.top = `${y}px`;
+                    } else {
+                        // Random initial position for desktop
+                        const x = Math.random() * (containerWidth - 200) + 100;
+                        const y = Math.random() * (containerHeight - 200) + 100;
+                        
+                        nodeElement.style.left = `${x}px`;
+                        nodeElement.style.top = `${y}px`;
+                    }
                     
-                    nodeElement.style.left = `${x}px`;
-                    nodeElement.style.top = `${y}px`;
                     container.appendChild(nodeElement);
                     
                     // Store node reference
@@ -454,12 +479,24 @@
                         nodeElement.style.zIndex = '100';
                     });
                     
-                    // Random initial position, distributed across the viewport
-                    const x = Math.random() * (containerWidth - 200) + 100;
-                    const y = Math.random() * (containerHeight - 200) + 100;
-                    
-                    nodeElement.style.left = `${x}px`;
-                    nodeElement.style.top = `${y}px`;
+                    // Position nodes differently on mobile to prevent long vertical layout
+                    if (window.innerWidth <= 768) {
+                        // Distribute nodes more evenly on mobile
+                        const radius = Math.min(containerWidth, containerHeight) * 0.35;
+                        const angle = (index / childNodes.length) * Math.PI * 2;
+                        const x = centerX + radius * Math.cos(angle) - 50;
+                        const y = centerY + radius * Math.sin(angle) - 50;
+                        
+                        nodeElement.style.left = `${x}px`;
+                        nodeElement.style.top = `${y}px`;
+                    } else {
+                        // Random initial position for desktop
+                        const x = Math.random() * (containerWidth - 200) + 100;
+                        const y = Math.random() * (containerHeight - 200) + 100;
+                        
+                        nodeElement.style.left = `${x}px`;
+                        nodeElement.style.top = `${y}px`;
+                    }
                     container.appendChild(nodeElement);
                     
                     // Store node reference
@@ -695,7 +732,7 @@
             
             // Use same movement parameters for all nodes regardless of level
             const movementRange = 50; 
-            const speedFactor = 1.5;
+            const speedFactor = window.innerWidth <= 768 ? 0.8 : 1.5; // Slower on mobile
             
             let dx = (Math.random() - 0.5) * MOVEMENT_SPEED * speedFactor; 
             let dy = (Math.random() - 0.5) * MOVEMENT_SPEED * speedFactor;
