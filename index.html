@@ -225,42 +225,56 @@
             transform: translateX(5px);
         }
         
-        /* 移动设备优化 */
+        /* Mobile device optimization */
         @media (max-width: 768px) {
             .node.level1 {
-                min-width: 140px;
-                min-height: 140px;
-                font-size: 20px;
+                min-width: 160px;
+                min-height: 160px;
+                font-size: 22px;
             }
             .node.level2 {
-                min-width: 120px;
-                min-height: 120px;
-                font-size: 12px;
+                min-width: 140px;
+                min-height: 140px;
+                font-size: 14px;
             }
             .node.level3 {
-                min-width: 80px;
-                min-height: 80px;
-                font-size: 10px;
+                min-width: 100px;
+                min-height: 100px;
+                font-size: 12px;
             }
             .node h5 {
-                font-size: 11px;
+                font-size: 13px;
+                line-height: 1.3;
             }
             .back-btn {
-                width: 60px;
-                height: 60px;
+                width: 70px;
+                height: 70px;
                 bottom: 30px;
                 left: 30px;
             }
             .node-content {
-                max-width: 90%;
-                padding: 15px;
+                max-width: 95%;
+                max-height: 90vh;
+                padding: 20px;
             }
-            /* 防止移动设备上的滚动干扰 */
+            .quote-card {
+                padding: 15px 10px;
+            }
+            .quote-card p {
+                font-size: 14px;
+                line-height: 1.5;
+            }
+            /* Prevent scrolling interference on mobile devices */
             #map-container {
                 touch-action: none;
             }
             body {
                 overscroll-behavior: none;
+            }
+            /* Improve buttons on mobile */
+            .btn-lg {
+                padding: 12px 24px;
+                font-size: 18px;
             }
         }
     </style>
@@ -330,7 +344,7 @@
                     rootElement.style.left = `${centerX - rootWidth/2}px`;
                     rootElement.style.top = `${centerY - rootHeight/2}px`;
                     
-                    // 添加标记属性，用于在mouseup/touchend事件中识别
+                    // Add attribute to identify this as root node in mouseup/touchend events
                     rootElement.setAttribute('data-root', 'true');
                     
                     // Store node reference
@@ -534,15 +548,15 @@
             }
 
             // 清晰记录历史状态，确保不会重复记录相同级别
-            console.log("展开前状态：", {currentLevel, clickedNode, nodeHistory});
+            console.log("Status before expansion:", {currentLevel, clickedNode, nodeHistory});
             
-            // 总是记录当前状态到历史记录中
+            // Always record current state to history
             nodeHistory.push({ level: currentLevel, parentId: currentParentId });
             
             // Update current state
             currentParentId = nodeId;
             
-            // 根据被点击节点的级别设置下一级别
+            // Set next level based on clicked node's level
             if (clickedNode.level === 1) {
                 currentLevel = 2; // From level1 to level2
             } else if (clickedNode.level === 2) {
@@ -551,7 +565,7 @@
                 currentLevel++; // Other cases
             }
             
-            console.log("展开后状态：", {currentLevel, nodeHistory});
+            console.log("Status after expansion:", {currentLevel, nodeHistory});
             
             // Recreate nodes with a slight delay to allow animation to show
             setTimeout(() => {
@@ -575,23 +589,23 @@
         function goBack() {
             if (nodeHistory.length === 0) return;
             
-            console.log("返回前状态：", {currentLevel, nodeHistory});
+            console.log("Status before return:", {currentLevel, nodeHistory});
             
-            // 从历史记录中获取上一级状态
+            // From history record get the previous state
             const lastState = nodeHistory.pop();
             currentLevel = lastState.level;
             currentParentId = lastState.parentId;
             
-            // 如果没有更多历史记录了，确保返回按钮在重新创建后会隐藏
+            // If no more history records, make sure the back button is hidden after recreation
             if (nodeHistory.length === 0 && currentLevel === 1) {
                 setTimeout(() => {
                     document.getElementById('back-btn').style.display = 'none';
                 }, 500);
             }
             
-            console.log("返回后状态：", {currentLevel, nodeHistory});
+            console.log("Status after return:", {currentLevel, nodeHistory});
             
-            // 重新创建节点
+            // Recreate nodes
             createNodes();
         }
 
@@ -851,9 +865,8 @@
             
             content.style.display = 'block';
             
-            // 移动设备浏览器中的特殊处理
+            // Special handling for mobile browsers
             if (window.innerWidth <= 768) {
-                // 确保内容开始时可见在视口内
                 window.scrollTo(0, 0);
                 document.body.style.overflow = 'hidden';
             }
@@ -899,7 +912,7 @@
             // Bottom buttons
             contentHtml += `
                 <div class="d-flex justify-content-end mt-4">
-                    <button class="btn btn-primary" onclick="closeContent()">Close</button>
+                    <button class="btn btn-primary btn-lg" onclick="closeContent()">Close</button>
                 </div>
             `;
             
@@ -913,6 +926,12 @@
             overlay.onclick = closeContent;
             
             content.style.display = 'block';
+            
+            // Special handling for mobile browsers
+            if (window.innerWidth <= 768) {
+                window.scrollTo(0, 0);
+                document.body.style.overflow = 'hidden';
+            }
             
             // Prevent clicks on the content from closing it
             content.onclick = function(e) {
@@ -929,7 +948,7 @@
             }
             overlay.style.display = 'none';
             
-            // 恢复移动设备的滚动行为
+            // Restore scrolling behavior on mobile devices
             document.body.style.overflow = '';
         }
 
@@ -1040,19 +1059,19 @@
                     // 重置z-index
                     draggedNode.style.zIndex = '';
                     
-                    // 获取节点信息
+                    // Get node information
                     const nodeId = parseInt(draggedNode.getAttribute('data-id'));
                     const nodeLevel = parseInt(draggedNode.getAttribute('class').match(/level(\d+)/)[1]);
                     const node = visualizationData.nodes.find(n => n.id === nodeId);
                     
-                    // 只有在确实是点击（短时间，最小移动）时才触发点击操作
+                    // Only trigger click actions if it was a genuine click (short duration, minimal movement)
                     if (!hasMoved && dragDuration < 300 && node) {
-                        // 确认节点级别
+                        // Verify node level
                         if (nodeLevel !== node.level) {
                             draggedNode.className = `node level${node.level}`;
                         }
                         
-                        // 基于节点级别执行点击操作
+                        // Perform click action based on node level
                         if (node.level === 1) {
                             expandNode(nodeId);
                         } else if (node.level === 2) {
@@ -1068,7 +1087,7 @@
                         }
                     }
                     
-                    // 重置拖动状态
+                    // Reset drag state
                     isDragging = false;
                     draggedNode = null;
                     hasMoved = false;
@@ -1091,9 +1110,7 @@
                     // Only trigger click actions if it was a genuine click (short duration, minimal movement)
                     if (!hasMoved && dragDuration < 300 && node) {
                         // Verify node level
-                        // Check if DOM element level matches data level
                         if (nodeLevel !== node.level) {
-                            // Try to correct DOM element class
                             draggedNode.className = `node level${node.level}`;
                         }
                         
@@ -1101,11 +1118,9 @@
                         if (node.level === 1) {
                             expandNode(nodeId);
                         } else if (node.level === 2) {
-                            // Check if has children
                             const hasChildren = node.children && node.children.length > 0;
                             
                             if (hasChildren) {
-                                // Check child nodes
                                 expandNode(nodeId);
                             } else {
                                 showNodeWithQuotes(node);
