@@ -224,6 +224,36 @@
             background: #e9ecef;
             transform: translateX(5px);
         }
+        
+        /* 移动设备优化 */
+        @media (max-width: 768px) {
+            .node.level1 {
+                min-width: 140px;
+                min-height: 140px;
+                font-size: 20px;
+            }
+            .node.level2 {
+                min-width: 120px;
+                min-height: 120px;
+                font-size: 12px;
+            }
+            .node.level3 {
+                min-width: 80px;
+                min-height: 80px;
+                font-size: 10px;
+            }
+            .node h5 {
+                font-size: 11px;
+            }
+            .back-btn {
+                width: 60px;
+                height: 60px;
+            }
+            .node-content {
+                max-width: 90%;
+                padding: 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -532,11 +562,18 @@
         // Go back to previous level
         function goBack() {
             if (nodeHistory.length === 0) return;
-            
-            // Restore previous state
-            const lastState = nodeHistory.pop();
-            currentLevel = lastState.level;
-            currentParentId = lastState.parentId;
+    
+            if (currentLevel === 3 && nodeHistory.length > 0) {
+
+                const lastState = nodeHistory.pop();
+                currentLevel = lastState.level;
+                currentParentId = lastState.parentId;
+            } else {
+
+                nodeHistory = []; 
+                currentLevel = 1;
+                currentParentId = null;
+            }
             
             // Recreate nodes
             createNodes();
@@ -909,6 +946,106 @@
                     if (dragDistance > 10) { // 10px threshold for considering a drag
                         hasMoved = true;
                     }
+                }
+            });
+            
+            document.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+                    
+                    if (targetElement && targetElement.classList.contains('node')) {
+                        e.preventDefault();
+                        
+                        clickStartTime = new Date().getTime();
+                        dragStartX = touch.clientX;
+                        dragStartY = touch.clientY;
+                        hasMoved = false;
+                        
+                        draggedNode = targetElement;
+                        
+                        const rect = targetElement.getBoundingClientRect();
+                        dragOffsetX = touch.clientX - rect.left;
+                        dragOffsetY = touch.clientY - rect.top;
+                        
+                        isDragging = true;
+                        targetElement.style.zIndex = '100';
+                    }
+                }
+            });
+            
+            document.addEventListener('touchmove', function(e) {
+                if (isDragging && draggedNode && e.touches.length === 1) {
+                    e.preventDefault(); 
+                    
+                    const touch = e.touches[0];
+                    const container = document.getElementById('map-container');
+                    const containerRect = container.getBoundingClientRect();
+                    
+                    let newX = touch.clientX - containerRect.left - dragOffsetX;
+                    let newY = touch.clientY - containerRect.top - dragOffsetY;
+                    
+             
+                    const nodeWidth = draggedNode.offsetWidth;
+                    const nodeHeight = draggedNode.offsetHeight;
+                    
+                    const padding = 20;
+                    newX = Math.max(padding, Math.min(newX, containerRect.width - nodeWidth - padding));
+                    newY = Math.max(padding, Math.min(newY, containerRect.height - nodeHeight - padding));
+                    
+                    draggedNode.style.left = `${newX}px`;
+                    draggedNode.style.top = `${newY}px`;
+                    
+                    const dragDistance = Math.sqrt(
+                        Math.pow(touch.clientX - dragStartX, 2) + 
+                        Math.pow(touch.clientY - dragStartY, 2)
+                    );
+                    
+                    if (dragDistance > 10) {
+                        hasMoved = true;
+                    }
+                }
+            });
+            
+            document.addEventListener('touchend', function(e) {
+                if (isDragging && draggedNode) {
+                    const dragDuration = new Date().getTime() - clickStartTime;
+                    
+                    // 重置z-index
+                    draggedNode.style.zIndex = '';
+                    
+                    // 获取节点信息
+                    const nodeId = parseInt(draggedNode.getAttribute('data-id'));
+                    const nodeLevel = parseInt(draggedNode.getAttribute('class').match(/level(\d+)/)[1]);
+                    const node = visualizationData.nodes.find(n => n.id === nodeId);
+                    
+                    // 只有在确实是点击（短时间，最小移动）时才触发点击操作
+                    if (!hasMoved && dragDuration < 300 && node) {
+                        // 确认节点级别
+                        if (nodeLevel !== node.level) {
+                            draggedNode.className = `node level${node.level}`;
+                        }
+                        
+                        // 基于节点级别执行点击操作
+                        if (node.level === 1) {
+                            expandNode(nodeId);
+                        } else if (node.level === 2) {
+                            const hasChildren = node.children && node.children.length > 0;
+                            
+                            if (hasChildren) {
+                                expandNode(nodeId);
+                            } else {
+                                showNodeWithQuotes(node);
+                            }
+                        } else if (node.level === 3) {
+                            showNodeWithQuotes(node);
+                        }
+                    }
+                    
+                    // 重置拖动状态
+                    isDragging = false;
+                    draggedNode = null;
+                    hasMoved = false;
                 }
             });
             
