@@ -232,7 +232,7 @@
                 height: auto !important;
                 min-height: 80vh;
                 max-width: 100vw;
-                margin: 0 auto;
+                /* margin: 0 auto; */
             }
             .node.level1 {
                 min-width: 160px;
@@ -390,25 +390,12 @@
                     
                     const nodeElement = createNodeElement(node);
                     
-                    // Position nodes differently on mobile to prevent long vertical layout
-                    if (window.innerWidth <= 768) {
-                        // Distribute nodes more evenly on mobile
-                        const radius = Math.min(containerWidth, containerHeight) * 0.35;
-                        const angle = (index / childNodes.length) * Math.PI * 2;
-                        const x = centerX + radius * Math.cos(angle) - 50;
-                        const y = centerY + radius * Math.sin(angle) - 50;
-                        
-                        nodeElement.style.left = `${x}px`;
-                        nodeElement.style.top = `${y}px`;
-                    } else {
-                        // Random initial position for desktop
-                        const x = Math.random() * (containerWidth - 200) + 100;
-                        const y = Math.random() * (containerHeight - 200) + 100;
-                        
-                        nodeElement.style.left = `${x}px`;
-                        nodeElement.style.top = `${y}px`;
-                    }
+                    // Random initial position, distributed across the viewport
+                    const x = Math.random() * (containerWidth - 200) + 100;
+                    const y = Math.random() * (containerHeight - 200) + 100;
                     
+                    nodeElement.style.left = `${x}px`;
+                    nodeElement.style.top = `${y}px`;
                     container.appendChild(nodeElement);
                     
                     // Store node reference
@@ -479,24 +466,12 @@
                         nodeElement.style.zIndex = '100';
                     });
                     
-                    // Position nodes differently on mobile to prevent long vertical layout
-                    if (window.innerWidth <= 768) {
-                        // Distribute nodes more evenly on mobile
-                        const radius = Math.min(containerWidth, containerHeight) * 0.35;
-                        const angle = (index / childNodes.length) * Math.PI * 2;
-                        const x = centerX + radius * Math.cos(angle) - 50;
-                        const y = centerY + radius * Math.sin(angle) - 50;
-                        
-                        nodeElement.style.left = `${x}px`;
-                        nodeElement.style.top = `${y}px`;
-                    } else {
-                        // Random initial position for desktop
-                        const x = Math.random() * (containerWidth - 200) + 100;
-                        const y = Math.random() * (containerHeight - 200) + 100;
-                        
-                        nodeElement.style.left = `${x}px`;
-                        nodeElement.style.top = `${y}px`;
-                    }
+                    // Random initial position, distributed across the viewport
+                    const x = Math.random() * (containerWidth - 200) + 100;
+                    const y = Math.random() * (containerHeight - 200) + 100;
+                    
+                    nodeElement.style.left = `${x}px`;
+                    nodeElement.style.top = `${y}px`;
                     container.appendChild(nodeElement);
                     
                     // Store node reference
