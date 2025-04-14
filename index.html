@@ -248,10 +248,19 @@
             .back-btn {
                 width: 60px;
                 height: 60px;
+                bottom: 30px;
+                left: 30px;
             }
             .node-content {
                 max-width: 90%;
                 padding: 15px;
+            }
+            /* 防止移动设备上的滚动干扰 */
+            #map-container {
+                touch-action: none;
+            }
+            body {
+                overscroll-behavior: none;
             }
         }
     </style>
@@ -321,11 +330,8 @@
                     rootElement.style.left = `${centerX - rootWidth/2}px`;
                     rootElement.style.top = `${centerY - rootHeight/2}px`;
                     
-                    // Root node click event - expand child nodes
-                    rootElement.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        expandNode(rootNode.id);
-                    });
+                    // 添加标记属性，用于在mouseup/touchend事件中识别
+                    rootElement.setAttribute('data-root', 'true');
                     
                     // Store node reference
                     allNodes.push({
@@ -527,12 +533,16 @@
                 }, 10);
             }
 
-            // Record history for back navigation
+            // 清晰记录历史状态，确保不会重复记录相同级别
+            console.log("展开前状态：", {currentLevel, clickedNode, nodeHistory});
+            
+            // 总是记录当前状态到历史记录中
             nodeHistory.push({ level: currentLevel, parentId: currentParentId });
             
             // Update current state
             currentParentId = nodeId;
-            // Check current node level to decide next level
+            
+            // 根据被点击节点的级别设置下一级别
             if (clickedNode.level === 1) {
                 currentLevel = 2; // From level1 to level2
             } else if (clickedNode.level === 2) {
@@ -540,6 +550,8 @@
             } else {
                 currentLevel++; // Other cases
             }
+            
+            console.log("展开后状态：", {currentLevel, nodeHistory});
             
             // Recreate nodes with a slight delay to allow animation to show
             setTimeout(() => {
@@ -562,20 +574,24 @@
         // Go back to previous level
         function goBack() {
             if (nodeHistory.length === 0) return;
-    
-            if (currentLevel === 3 && nodeHistory.length > 0) {
-
-                const lastState = nodeHistory.pop();
-                currentLevel = lastState.level;
-                currentParentId = lastState.parentId;
-            } else {
-
-                nodeHistory = []; 
-                currentLevel = 1;
-                currentParentId = null;
+            
+            console.log("返回前状态：", {currentLevel, nodeHistory});
+            
+            // 从历史记录中获取上一级状态
+            const lastState = nodeHistory.pop();
+            currentLevel = lastState.level;
+            currentParentId = lastState.parentId;
+            
+            // 如果没有更多历史记录了，确保返回按钮在重新创建后会隐藏
+            if (nodeHistory.length === 0 && currentLevel === 1) {
+                setTimeout(() => {
+                    document.getElementById('back-btn').style.display = 'none';
+                }, 500);
             }
             
-            // Recreate nodes
+            console.log("返回后状态：", {currentLevel, nodeHistory});
+            
+            // 重新创建节点
             createNodes();
         }
 
@@ -820,7 +836,7 @@
             // Add bottom buttons
             contentHtml += `
                 <div class="d-flex justify-content-end mt-4">
-                    <button class="btn btn-primary" onclick="closeContent()">Close</button>
+                    <button class="btn btn-primary btn-lg" onclick="closeContent()">Close</button>
                 </div>
             `;
             
@@ -834,6 +850,13 @@
             overlay.onclick = closeContent;
             
             content.style.display = 'block';
+            
+            // 移动设备浏览器中的特殊处理
+            if (window.innerWidth <= 768) {
+                // 确保内容开始时可见在视口内
+                window.scrollTo(0, 0);
+                document.body.style.overflow = 'hidden';
+            }
             
             // Prevent clicks on content from propagating
             content.onclick = function(e) {
@@ -905,6 +928,9 @@
                 content.remove();
             }
             overlay.style.display = 'none';
+            
+            // 恢复移动设备的滚动行为
+            document.body.style.overflow = '';
         }
 
         // Bind back button event
