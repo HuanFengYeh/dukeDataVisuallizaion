@@ -615,28 +615,8 @@
                 }, 10);
             }
 
-            // Clear history and record new state for better mobile navigation
-            if (window.innerWidth <= 768) {
-                // On mobile, keep navigation simpler by only storing one level back
-                if (clickedNode.level === 1) {
-                    // From level 1 to level 2
-                    nodeHistory = [];
-                    nodeHistory.push({ level: currentLevel, parentId: currentParentId });
-                } else if (clickedNode.level === 2) {
-                    // From level 2 to level 3
-                    if (nodeHistory.length > 0) {
-                        // Keep only the first item (main level)
-                        const mainLevel = nodeHistory[0];
-                        nodeHistory = [mainLevel];
-                        nodeHistory.push({ level: currentLevel, parentId: currentParentId });
-                    } else {
-                        nodeHistory.push({ level: currentLevel, parentId: currentParentId });
-                    }
-                }
-            } else {
                 // Desktop behavior - push current state to history
                 nodeHistory.push({ level: currentLevel, parentId: currentParentId });
-            }
             
             console.log("Status after expansion:", {currentLevel, nodeHistory});
             
@@ -676,27 +656,11 @@
             
             console.log("Status before return:", {currentLevel, nodeHistory});
             
-            // Simplified return logic for mobile
-            if (window.innerWidth <= 768) {
-                if (currentLevel === 3) {
-                    // From level 3 to level 2
-                    if (nodeHistory.length > 0) {
-                        const lastState = nodeHistory.pop();
-                        currentLevel = lastState.level;
-                        currentParentId = lastState.parentId;
-                    }
-                } else if (currentLevel === 2) {
-                    // From level 2 directly to level 1 (main screen)
-                    nodeHistory = [];
-                    currentLevel = 1;
-                    currentParentId = null;
-                }
-            } else {
-                // Desktop behavior - pop from history
+           
                 const lastState = nodeHistory.pop();
                 currentLevel = lastState.level;
                 currentParentId = lastState.parentId;
-            }
+            
             
             // If no more history records, make sure the back button is hidden after recreation
             if (nodeHistory.length === 0 && currentLevel === 1) {
