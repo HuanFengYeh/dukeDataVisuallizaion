@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>What Is Hope?</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        body {
+            background-color: #f8f9fa;
+            overflow: hidden;
+            font-family: 'Montserrat', Arial, sans-serif;
+        }
+        #map-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: #fff;
+            overflow: hidden;
+        }
+        .node {
+            position: absolute;
+            border-radius: 50%;
+            padding: 20px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+        .node h5 {
+            margin: 0 0 5px;
+            text-align: center;
+            width: 100%;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .node small {
+            text-align: center;
+            width: 100%;
+            display: block;
+        }
+        .node.level1 {
+            min-width: 180px;
+            min-height: 180px;
+            background: white;
+            color: black;
+            z-index: 3;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .node.level2 {
+            min-width: 150px;
+            min-height: 150px;
+            color: black;
+            z-index: 2;
+            padding: 15px;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+        .node.level3 {
+            min-width: 100px;
+            min-height: 100px;
+            color: black;
+            z-index: 1;
+            font-size: 12px;
+            opacity: 0.9;
+            display: flex !important; /* Make sure it's always displayed */
+            visibility: visible !important; /* Make sure it's always visible */
+            opacity: 1 !important; /* Make sure it's opaque */
+            pointer-events: auto !important; /* Make sure it can receive mouse events */
+        }
+        
+        /* Force all level3 nodes to display */
+        div[class*="level3"] {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        /* Any node that matches level3 */
+        div[data-id] {
+            visibility: visible;
+        }
+        
+        /* Prevent level3 from being overridden by styles */
+        body .node.level3 {
+            display: flex !important;
+        }
+        
+        .node.level4 {
+            display: none; /* Level 4 nodes are not directly displayed */
+            min-width: 80px;
+            min-height: 80px;
+            background: rgba(255,255,255,0.9);
+            color: black;
+            z-index: 1;
+            font-size: 11px;
+            opacity: 0.85;
+        }
+        .node[data-type="hope"], 
+        .node[data-type="objects_of_hope"] {
+            background: #FFF06A; /* Yellow */
+        }
+        .node[data-type="emotion"], 
+        .node[data-type="feelings_and_emotions"] {
+            background: #74B3E0; /* Blue */
+        }
+        .node[data-type="agent"], 
+        .node[data-type="agents"] {
+            background: #9AE6B4; /* Green */
+        }
+        .node:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        
+        /* Add click animation effect */
+        @keyframes nodeClickAnimation {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(3);
+                opacity: 0;
+            }
+        }
+        
+        .node-click-effect {
+            animation: nodeClickAnimation 0.8s ease forwards;
+            pointer-events: none;
+        }
+        
+        .node-content {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            max-width: 80%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        /* Quote list styles */
+        .quotes-container {
+            max-height: 60vh;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+        .quote-card {
+            background: #f8f9fa;
+            border-left: 4px solid #0d6efd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+        }
+        .quote-card i {
+            color: #0d6efd;
+        }
+        /* Back button styles */
+        .back-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #0d6efd;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 100;
+            transition: all 0.3s ease;
+            display: none;
+        }
+        .back-btn:hover {
+            transform: scale(1.1);
+        }
+        /* Sub-item list styles */
+        .child-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        .child-list li {
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .child-list li:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+        
+        /* Mobile device optimization */
+        @media (max-width: 768px) {
+            html, body {
+                overflow: hidden;
+                position: fixed;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                top: 0;
+                left: 0;
+            }
+            #map-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                width: 100vw !important;
+                height: 100vh !important;
+                max-width: 100vw;
+                max-height: 100vh;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+                background: #fff;
+            }
+            .node.level1 {
+                min-width: 160px;
+                min-height: 160px;
+                font-size: 22px;
+            }
+            .node.level2 {
+                min-width: 140px;
+                min-height: 140px;
+                font-size: 14px;
+            }
+            .node.level3 {
+                min-width: 100px;
+                min-height: 100px;
+                font-size: 12px;
+            }
+            .node h5 {
+                font-size: 13px;
+                line-height: 1.3;
+            }
+            .back-btn {
+                width: 70px;
+                height: 70px;
+                bottom: 80px; /* Move up to avoid browser controls */
+                left: 30px;
+                z-index: 2000; /* Ensure it's above all other elements */
+            }
+            .node-content {
+                width: 90%;
+                max-width: 90%;
+                max-height: 80vh;
+                padding: 20px;
+                top: 45%;
+                z-index: 2001; /* Ensure it's above all other elements */
+            }
+            .quotes-container {
+                max-height: 50vh;
+            }
+            .quote-card {
+                padding: 15px 10px;
+            }
+            .quote-card p {
+                font-size: 14px;
+                line-height: 1.5;
+            }
+            /* Prevent scrolling interference on mobile devices */
+            #map-container {
+                touch-action: none;
+            }
+            body {
+                overscroll-behavior: none;
+            }
+            /* Improve buttons on mobile */
+            .btn-lg {
+                padding: 12px 24px;
+                font-size: 18px;
+            }
+            .overlay {
+                z-index: 1999; /* Ensure overlay is above all elements except content */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="map-container">
+        <!-- Nodes will be dynamically generated -->
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    
+    <!-- Back button -->
+    <div class="back-btn" id="back-btn">
+        <i class="fas fa-arrow-left"></i>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Data file -->
+    <script src="visualizationData.js"></script>
+    <!-- Custom JS -->
+    <script>
+        // Track current level and parent node
+        let currentLevel = 1;
+        let currentParentId = null;
+        let nodeHistory = [];
+        let allNodes = []; // Store references to all node elements
+        
+        // Movement parameters
+        const MOVEMENT_SPEED = 1.0; // Base movement speed
+        const COLLISION_FORCE = 0.5; // Force applied during collisions
+        
+        // Drag state tracking
+        let isDragging = false;
+        let draggedNode = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        let clickStartTime = 0;
+        let hasMoved = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+
+        // Create nodes
+        function createNodes() {
+            clearNodes();
+            allNodes = []; // Reset node list
+            
+            const container = document.getElementById('map-container');
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            const centerX = containerWidth / 2;
+            const centerY = containerHeight / 2;
+
+            // Create only the root node
+            if (currentLevel === 1) {
+                const rootNode = visualizationData.nodes.find(node => node.level === 1);
+                if (rootNode) {
+                    // Modify root node title
+                    rootNode.title = "WHAT IS HOPE?";
+                    
+                    const rootElement = createNodeElement(rootNode);
+                    // Get actual node dimensions
+                    container.appendChild(rootElement);
+                    const rootWidth = rootElement.offsetWidth;
+                    const rootHeight = rootElement.offsetHeight;
+                    // Adjust position considering node size
+                    rootElement.style.left = `${centerX - rootWidth/2}px`;
+                    rootElement.style.top = `${centerY - rootHeight/2}px`;
+                    
+                    // Add attribute to identify this as root node in mouseup/touchend events
+                    rootElement.setAttribute('data-root', 'true');
+                    
+                    // Store node reference
+                    allNodes.push({
+                        element: rootElement,
+                        id: rootNode.id
+                    });
+                    
+                    // Hide back button
+                    document.getElementById('back-btn').style.display = 'none';
+                }
+            } 
+            // Show level 2 nodes
+            else if (currentLevel === 2) {
+                const parentNode = visualizationData.nodes.find(node => node.id === currentParentId);
+                if (!parentNode || !parentNode.children) {
+                    return;
+                }
+                
+                const childNodes = parentNode.children.map(childId => {
+                    const node = visualizationData.nodes.find(n => n.id === childId);
+                    return node;
+                }).filter(node => node); // Filter out undefined
+                
+                // Create level 2 nodes
+                childNodes.forEach((node, index) => {
+                    // Modify display names based on data type
+                    if (node.type === "objects_of_hope") node.title = "OBJECT OF HOPE";
+                    if (node.type === "feelings_and_emotions") node.title = "FEELINGS & EMOTIONS";
+                    if (node.type === "agents") node.title = "AGENTS";
+                    
+                    const nodeElement = createNodeElement(node);
+                    
+                    // Position nodes differently on mobile to prevent long vertical layout
+                    if (window.innerWidth <= 768) {
+                        // Distribute nodes more evenly on mobile - always use circular layout
+                        const radius = Math.min(containerWidth, containerHeight) * 0.35;
+                        // Position exactly in circle for better distribution
+                        const angle = (index / childNodes.length) * Math.PI * 2;
+                        const x = centerX + radius * Math.cos(angle) - 70; // Adjust offset for node size
+                        const y = centerY + radius * Math.sin(angle) - 70;
+                        
+                        nodeElement.style.left = `${x}px`;
+                        nodeElement.style.top = `${y}px`;
+                    } else {
+                        // Random initial position for desktop
+                        const x = Math.random() * (containerWidth - 200) + 100;
+                        const y = Math.random() * (containerHeight - 200) + 100;
+                        
+                        nodeElement.style.left = `${x}px`;
+                        nodeElement.style.top = `${y}px`;
+                    }
+                    
+                    container.appendChild(nodeElement);
+                    
+                    // Store node reference
+                    allNodes.push({
+                        element: nodeElement,
+                        id: node.id
+                    });
+                });
+                
+                // Show back button
+                document.getElementById('back-btn').style.display = 'flex';
+            }
+            // Show level 3 nodes
+            else if (currentLevel === 3) {
+                const parentNode = visualizationData.nodes.find(node => node.id === currentParentId);
+                if (!parentNode || !parentNode.children) {
+                    return;
+                }
+                
+                const childNodes = parentNode.children.map(childId => {
+                    const node = visualizationData.nodes.find(n => n.id === childId);
+                    return node;
+                }).filter(node => node); // Filter out undefined
+                
+                // Create all level 3 nodes using same logic as level 2
+                const nodeCount = childNodes.length;
+                
+                childNodes.forEach((node, index) => {
+                    // Ensure title is short
+                    if (node.title.length > 20) {
+                        node.displayTitle = node.title.substring(0, 20) + "...";
+                    } else {
+                        node.displayTitle = node.title;
+                    }
+                    
+                    // Create DOM element - ensure correct level attribute
+                    const nodeElement = document.createElement('div');
+                    nodeElement.className = `node level${node.level}`;
+                    nodeElement.setAttribute('data-type', node.type);
+                    nodeElement.setAttribute('data-id', node.id);
+                    
+                    // Use displayTitle
+                    const displayTitle = node.displayTitle || node.title;
+                    nodeElement.innerHTML = `<h5>${displayTitle}</h5>`;
+                    
+                    // Force display level 3 nodes
+                    nodeElement.style.display = "flex";
+                    nodeElement.style.visibility = "visible";
+                    nodeElement.style.opacity = "1";
+                    
+                    // Add mouse events
+                    nodeElement.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        clickStartTime = new Date().getTime();
+                        dragStartX = e.clientX;
+                        dragStartY = e.clientY;
+                        hasMoved = false;
+                        
+                        draggedNode = nodeElement;
+                        
+                        const rect = nodeElement.getBoundingClientRect();
+                        dragOffsetX = e.clientX - rect.left;
+                        dragOffsetY = e.clientY - rect.top;
+                        
+                        isDragging = true;
+                        nodeElement.style.zIndex = '100';
+                    });
+                    
+                    // Position nodes in a circle for better visibility on mobile
+                    if (window.innerWidth <= 768) {
+                        // For small number of items, use larger radius
+                        const radiusScale = childNodes.length < 10 ? 0.35 : 0.3;
+                        const radius = Math.min(containerWidth, containerHeight) * radiusScale;
+                        
+                        // For better distribution in mobiles, adjust angles slightly
+                        // Add small random variation to prevent overlap
+                        const variation = 0.1 * Math.random();
+                        const angle = (index / childNodes.length) * Math.PI * 2 + variation;
+                        
+                        const x = centerX + radius * Math.cos(angle) - 50;
+                        const y = centerY + radius * Math.sin(angle) - 50;
+                        
+                        nodeElement.style.left = `${x}px`;
+                        nodeElement.style.top = `${y}px`;
+                    } else {
+                        // Random position for desktop
+                        const x = Math.random() * (containerWidth - 200) + 100;
+                        const y = Math.random() * (containerHeight - 200) + 100;
+                        
+                        nodeElement.style.left = `${x}px`;
+                        nodeElement.style.top = `${y}px`;
+                    }
+                    
+                    container.appendChild(nodeElement);
+                    
+                    // Store node reference
+                    allNodes.push({
+                        element: nodeElement,
+                        id: node.id
+                    });
+                });
+                
+                // Check actual number of level 3 nodes added
+                const level3NodesInDOM = document.querySelectorAll('.node.level3').length;
+                
+                // Show back button
+                document.getElementById('back-btn').style.display = 'flex';
+            }
+            
+            if (currentLevel >= 2) { // Apply animation to all nodes except the main node
+                startNodeAnimation();
+            }
+        }
+        
+        // Clear all nodes
+        function clearNodes() {
+            const container = document.getElementById('map-container');
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+        }
+        
+        // Expand node to show its children
+        function expandNode(nodeId) {
+            // Find the clicked node in data
+            const clickedNode = visualizationData.nodes.find(node => node.id === nodeId);
+            
+            // Check if node has children
+            if (clickedNode && clickedNode.children && clickedNode.children.length > 0) {
+                const childNodes = clickedNode.children.map(childId => 
+                    visualizationData.nodes.find(n => n.id === childId)
+                ).filter(n => n);
+                
+                // Check if we need to expand or show quotes
+                const firstChildLevel = childNodes.length > 0 ? childNodes[0].level : null;
+                
+                // If level3 node has level4 children, show quotes instead of expanding
+                if (clickedNode.level === 3 && firstChildLevel === 4) {
+                    showNodeWithQuotes(clickedNode);
+                    return; // Don't continue expanding
+                }
+            } else {
+                // If node has no children, show quotes
+                if (clickedNode.level === 2 || clickedNode.level === 3) {
+                    showNodeWithQuotes(clickedNode);
+                    return; // Don't continue expanding
+                }
+            }
+            
+            // Find the clicked node element for animation
+            const clickedNodeElement = document.querySelector(`.node[data-id="${nodeId}"]`);
+            
+            if (clickedNodeElement) {
+                // Create a clone of the node for animation
+                const nodeClone = clickedNodeElement.cloneNode(true);
+                const rect = clickedNodeElement.getBoundingClientRect();
+                
+                // Position the clone exactly over the original
+                nodeClone.style.position = 'fixed';
+                nodeClone.style.top = `${rect.top}px`;
+                nodeClone.style.left = `${rect.left}px`;
+                nodeClone.style.width = `${rect.width}px`;
+                nodeClone.style.height = `${rect.height}px`;
+                nodeClone.style.zIndex = '1000';
+                nodeClone.style.pointerEvents = 'none';
+                
+                // Add to body for animation
+                document.body.appendChild(nodeClone);
+                
+                // Start animation
+                setTimeout(() => {
+                    nodeClone.classList.add('node-click-effect');
+                    
+                    // Remove clone after animation completes
+                    setTimeout(() => {
+                        nodeClone.remove();
+                    }, 800);
+                }, 10);
+            }
+
+                // Desktop behavior - push current state to history
+                nodeHistory.push({ level: currentLevel, parentId: currentParentId });
+            
+            console.log("Status after expansion:", {currentLevel, nodeHistory});
+            
+            // Update current state
+            currentParentId = nodeId;
+            
+            // Set next level based on clicked node's level
+            if (clickedNode.level === 1) {
+                currentLevel = 2; // From level1 to level2
+            } else if (clickedNode.level === 2) {
+                currentLevel = 3; // From level2 to level3
+            } else {
+                currentLevel++; // Other cases
+            }
+            
+            // Recreate nodes with a slight delay to allow animation to show
+            setTimeout(() => {
+                createNodes();
+                
+                // Ensure level 3 nodes are visible
+                if (currentLevel === 3) {
+                    setTimeout(() => {
+                        const level3Nodes = document.querySelectorAll('.node.level3');
+                        level3Nodes.forEach(node => {
+                            node.style.display = 'flex';
+                            node.style.visibility = 'visible';
+                            node.style.opacity = '1';
+                        });
+                    }, 100);
+                }
+            }, 400);
+        }
+        
+        // Go back to previous level
+        function goBack() {
+            if (nodeHistory.length === 0) return;
+            
+            console.log("Status before return:", {currentLevel, nodeHistory});
+            
+           
+                const lastState = nodeHistory.pop();
+                currentLevel = lastState.level;
+                currentParentId = lastState.parentId;
+            
+            
+            // If no more history records, make sure the back button is hidden after recreation
+            if (nodeHistory.length === 0 && currentLevel === 1) {
+                setTimeout(() => {
+                    document.getElementById('back-btn').style.display = 'none';
+                }, 500);
+            }
+            
+            console.log("Status after return:", {currentLevel, nodeHistory});
+            
+            // Recreate nodes
+            createNodes();
+        }
+
+        // Helper function to create node element
+        function createNodeElement(node) {
+            const nodeElement = document.createElement('div');
+            nodeElement.className = `node level${node.level}`;
+            nodeElement.setAttribute('data-type', node.type);
+            nodeElement.setAttribute('data-id', node.id);
+            
+            // Use displayTitle if exists, otherwise use title
+            const displayTitle = node.displayTitle || node.title;
+            
+            // Keep interface clean with just the title
+            nodeElement.innerHTML = `<h5>${displayTitle}</h5>`;
+            
+            // Force show for debugging
+            if (node.level === 3) {
+                nodeElement.style.display = "flex";
+                nodeElement.style.visibility = "visible";
+                nodeElement.style.opacity = "1";
+            }
+            
+            // Add mouse down event for drag start
+            // But DON'T add click handlers here
+            nodeElement.addEventListener('mousedown', function(e) {
+                // Prevent default behavior
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Record start time and position
+                clickStartTime = new Date().getTime();
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
+                hasMoved = false;
+                
+                // Record which node is being dragged
+                draggedNode = nodeElement;
+                
+                // Calculate the offset of the mouse cursor from the node's top-left corner
+                const rect = nodeElement.getBoundingClientRect();
+                dragOffsetX = e.clientX - rect.left;
+                dragOffsetY = e.clientY - rect.top;
+                
+                // Set dragging state
+                isDragging = true;
+                
+                // Bring node to front while dragging
+                nodeElement.style.zIndex = '100';
+            });
+            
+            return nodeElement;
+        }
+
+        // Animate nodes
+        function startNodeAnimation() {
+            // Select all level2 and level3 nodes
+            const nodes = document.querySelectorAll('.node.level2, .node.level3');
+            nodes.forEach(node => {
+                animateNode(node);
+            });
+        }
+
+        function animateNode(node) {
+            const container = document.getElementById('map-container');
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            const nodeWidth = node.offsetWidth;
+            const nodeHeight = node.offsetHeight;
+            const padding = 20; // Padding from edges
+
+            // Get initial position
+            let x = parseFloat(node.style.left);
+            let y = parseFloat(node.style.top);
+            
+            // Set initial position if not set
+            if (isNaN(x) || isNaN(y)) {
+                x = Math.random() * (containerWidth - nodeWidth - 2*padding) + padding;
+                y = Math.random() * (containerHeight - nodeHeight - 2*padding) + padding;
+                node.style.left = `${x}px`;
+                node.style.top = `${y}px`;
+            }
+            
+            // Record original position to maintain relative layout
+            const originalX = x;
+            const originalY = y;
+            
+            // Use same movement parameters for all nodes regardless of level
+            const movementRange = 50; 
+            const speedFactor = window.innerWidth <= 768 ? 0.8 : 1.5; // Slower on mobile
+            
+            let dx = (Math.random() - 0.5) * MOVEMENT_SPEED * speedFactor; 
+            let dy = (Math.random() - 0.5) * MOVEMENT_SPEED * speedFactor;
+            
+            // Ensure minimum velocity
+            const minVelocity = 0.2;
+            if (Math.abs(dx) < minVelocity) dx = dx > 0 ? minVelocity : -minVelocity;
+            if (Math.abs(dy) < minVelocity) dy = dy > 0 ? minVelocity : -minVelocity;
+
+            function move() {
+                // Only move the node if it's not being dragged
+                if (!isDragging || draggedNode !== node) {
+                    // Apply velocity changes
+                x += dx;
+                y += dy;
+
+                    // Random direction changes for all nodes
+                    if (Math.random() < 0.0025) {
+                        dx = (Math.random() - 0.5) * MOVEMENT_SPEED * speedFactor;
+                        dy = (Math.random() - 0.5) * MOVEMENT_SPEED * speedFactor;
+                        if (Math.abs(dx) < minVelocity) dx = dx > 0 ? minVelocity : -minVelocity;
+                        if (Math.abs(dy) < minVelocity) dy = dy > 0 ? minVelocity : -minVelocity;
+                    }
+
+                    // Wall collision detection
+                    if (x < padding) {
+                        x = padding;
+                        dx = Math.abs(dx);
+                    } else if (x > containerWidth - nodeWidth - padding) {
+                        x = containerWidth - nodeWidth - padding;
+                        dx = -Math.abs(dx);
+                    }
+                    
+                    if (y < padding) {
+                        y = padding;
+                        dy = Math.abs(dy);
+                    } else if (y > containerHeight - nodeHeight - padding) {
+                        y = containerHeight - nodeHeight - padding;
+                        dy = -Math.abs(dy);
+                    }
+                    
+                    // Apply new position
+                node.style.left = `${x}px`;
+                node.style.top = `${y}px`;
+                } else {
+                    // If node is being dragged, update our position variables to match the current position
+                    x = parseFloat(node.style.left);
+                    y = parseFloat(node.style.top);
+                }
+
+                requestAnimationFrame(move);
+            }
+
+            move();
+        }
+
+        // Display node with quotes list
+        function showNodeWithQuotes(node) {
+            const content = document.createElement('div');
+            content.className = 'node-content';
+            
+            let contentHtml = `
+                <h3>${node.title}</h3>
+                <p>${node.content || ''}</p>
+            `;
+            
+            // First check if this node has its own content
+            if (node.content || node.quote) {
+                contentHtml += `<h5>Content:</h5>`;
+                contentHtml += `
+                    <div class="quotes-container">
+                        <div class="quote-card">
+                            <i class="fas fa-quote-left"></i>
+                            <p class="mt-2">${node.content || node.quote}</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Then check for child nodes that might contain quotes
+            let childNodes = [];
+            
+            if (node.children && node.children.length > 0) {
+                // Find child nodes from the global data
+                childNodes = node.children
+                    .map(childId => {
+                        const childNode = visualizationData.nodes.find(n => n.id === childId);
+                        return childNode;
+                    })
+                    .filter(n => n);
+                
+                // If we have child nodes, display their content as quotes
+                if (childNodes.length > 0) {
+                    contentHtml += `<h5>Quotes:</h5>`;
+                    contentHtml += `<div class="quotes-container">`;
+                    
+                    let hasDisplayedQuotes = false;
+                    
+                    // Process each child node for quotes
+                    childNodes.forEach((childNode) => {
+                        const quoteText = childNode.content || childNode.quote || '';
+                        const sourceId = childNode.source_id || '';
+                        
+                        if (quoteText) {
+                            contentHtml += `
+                                <div class="quote-card">
+                                    <i class="fas fa-quote-left"></i>
+                                    <p class="mt-2">${quoteText}</p>
+                                    ${sourceId ? `<small class="text-muted">Source: ${sourceId}</small>` : ''}
+                                </div>
+                            `;
+                            hasDisplayedQuotes = true;
+                        }
+                        
+                        // Check for children of child nodes (level 4 nodes if they exist)
+                        if (childNode.children && childNode.children.length > 0) {
+                            const grandChildNodes = childNode.children
+                                .map(gcId => visualizationData.nodes.find(n => n.id === gcId))
+                                .filter(n => n);
+                            
+                            // Add quotes from grandchild nodes
+                            grandChildNodes.forEach((gcNode) => {
+                                const gcQuoteText = gcNode.content || gcNode.quote || '';
+                                const gcSourceId = gcNode.source_id || '';
+                                
+                                if (gcQuoteText) {
+                                    contentHtml += `
+                                        <div class="quote-card">
+                                            <i class="fas fa-quote-left"></i>
+                                            <p class="mt-2">${gcQuoteText}</p>
+                                            ${gcSourceId ? `<small class="text-muted">Source: ${gcSourceId}</small>` : ''}
+                                        </div>
+                                    `;
+                                    hasDisplayedQuotes = true;
+                                }
+                            });
+                        }
+                    });
+                    
+                    contentHtml += `</div>`;
+                    
+                    // Display a message if no quotes were found
+                    if (!hasDisplayedQuotes) {
+                        contentHtml += `<p class="mt-3">No quotes found.</p>`;
+                    }
+                }
+            } else if (!node.content && !node.quote) {
+                // If no content and no children, display a message
+                contentHtml += `<p class="mt-3">No available content for this node.</p>`;
+            }
+            
+            // Add bottom buttons
+            contentHtml += `
+                <div class="d-flex justify-content-end mt-4">
+                    <button class="btn btn-primary btn-lg" onclick="closeContent()">Close</button>
+                </div>
+            `;
+            
+            content.innerHTML = contentHtml;
+            
+            document.body.appendChild(content);
+            
+            // Show overlay and handle closing
+            const overlay = document.getElementById('overlay');
+            overlay.style.display = 'block';
+            overlay.onclick = closeContent;
+            
+            content.style.display = 'block';
+            
+            // Special handling for mobile browsers
+            if (window.innerWidth <= 768) {
+                window.scrollTo(0, 0);
+                document.body.style.overflow = 'hidden';
+            }
+            
+            // Prevent clicks on content from propagating
+            content.onclick = function(e) {
+                e.stopPropagation();
+            };
+        }
+
+        // Show node content
+        function showNodeContent(node) {
+            const content = document.createElement('div');
+            content.className = 'node-content';
+            
+            // Basic information
+            let contentHtml = `
+                <h3>${node.title}</h3>
+                <p>${node.content || ''}</p>
+            `;
+            
+            // Check for child nodes
+            if (node.children && node.children.length > 0) {
+                contentHtml += `<h5>Sub-items:</h5>`;
+                contentHtml += `<ul class="child-list">`;
+                
+                // Get and display child nodes
+                const childNodes = node.children.map(childId => 
+                    visualizationData.nodes.find(n => n.id === childId)
+                ).filter(n => n);
+                
+                childNodes.forEach(childNode => {
+                    contentHtml += `
+                        <li onclick="expandNode(${childNode.id})">
+                            ${childNode.title}
+                        </li>
+                    `;
+                });
+                
+                contentHtml += `</ul>`;
+            }
+            
+            // Bottom buttons
+            contentHtml += `
+                <div class="d-flex justify-content-end mt-4">
+                    <button class="btn btn-primary btn-lg" onclick="closeContent()">Close</button>
+                </div>
+            `;
+            
+            content.innerHTML = contentHtml;
+            
+            document.body.appendChild(content);
+            
+            // Show overlay and make it close the content when clicked
+            const overlay = document.getElementById('overlay');
+            overlay.style.display = 'block';
+            overlay.onclick = closeContent;
+            
+            content.style.display = 'block';
+            
+            // Special handling for mobile browsers
+            if (window.innerWidth <= 768) {
+                window.scrollTo(0, 0);
+                document.body.style.overflow = 'hidden';
+            }
+            
+            // Prevent clicks on the content from closing it
+            content.onclick = function(e) {
+                e.stopPropagation();
+            };
+        }
+
+        // Close content
+        function closeContent() {
+            const overlay = document.getElementById('overlay');
+            const content = document.querySelector('.node-content');
+            if (content) {
+                content.remove();
+            }
+            overlay.style.display = 'none';
+            
+            // Restore scrolling behavior on mobile devices
+            document.body.style.overflow = '';
+        }
+
+        // Bind back button event
+        document.getElementById('back-btn').addEventListener('click', goBack);
+
+        // Initialize page
+        window.addEventListener('load', () => {
+            // iOS Safari specific fix for full height
+            if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+                // Set initial height
+                const initialHeight = window.innerHeight;
+                document.getElementById('map-container').style.height = `${initialHeight}px`;
+                
+                // Handle orientation changes
+                window.addEventListener('resize', () => {
+                    // Small delay to ensure height is calculated after toolbar shows/hides
+                    setTimeout(() => {
+                        document.getElementById('map-container').style.height = `${window.innerHeight}px`;
+                        // Recreate nodes after height update
+                        createNodes();
+                    }, 100);
+                });
+                
+                // Fix for iOS Safari address bar
+                window.scrollTo(0, 0);
+                setTimeout(() => {
+                    window.scrollTo(0, 0);
+                }, 100);
+            }
+            
+            createNodes();
+            
+            // Add global mouse move event listener for dragging
+            document.addEventListener('mousemove', function(e) {
+                if (isDragging && draggedNode) {
+                    // Calculate new position
+                    const container = document.getElementById('map-container');
+                    const containerRect = container.getBoundingClientRect();
+                    
+                    let newX = e.clientX - containerRect.left - dragOffsetX;
+                    let newY = e.clientY - containerRect.top - dragOffsetY;
+                    
+                    // Get node dimensions
+                    const nodeWidth = draggedNode.offsetWidth;
+                    const nodeHeight = draggedNode.offsetHeight;
+                    
+                    // Ensure the node stays within container boundaries
+                    const padding = 20;
+                    newX = Math.max(padding, Math.min(newX, containerRect.width - nodeWidth - padding));
+                    newY = Math.max(padding, Math.min(newY, containerRect.height - nodeHeight - padding));
+                    
+                    // Set new position
+                    draggedNode.style.left = `${newX}px`;
+                    draggedNode.style.top = `${newY}px`;
+                    
+                    // Set hasMoved to true if mouse has moved more than a threshold
+                    const dragDistance = Math.sqrt(
+                        Math.pow(e.clientX - dragStartX, 2) + 
+                        Math.pow(e.clientY - dragStartY, 2)
+                    );
+                    
+                    if (dragDistance > 10) { // 10px threshold for considering a drag
+                        hasMoved = true;
+                    }
+                }
+            });
+            
+            document.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 1) {
+                    const touch = e.touches[0];
+                    const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+                    
+                    if (targetElement && targetElement.classList.contains('node')) {
+                        e.preventDefault();
+                        
+                        clickStartTime = new Date().getTime();
+                        dragStartX = touch.clientX;
+                        dragStartY = touch.clientY;
+                        hasMoved = false;
+                        
+                        draggedNode = targetElement;
+                        
+                        const rect = targetElement.getBoundingClientRect();
+                        dragOffsetX = touch.clientX - rect.left;
+                        dragOffsetY = touch.clientY - rect.top;
+                        
+                        isDragging = true;
+                        targetElement.style.zIndex = '100';
+                    }
+                }
+            });
+            
+            document.addEventListener('touchmove', function(e) {
+                if (isDragging && draggedNode && e.touches.length === 1) {
+                    e.preventDefault(); 
+                    
+                    const touch = e.touches[0];
+                    const container = document.getElementById('map-container');
+                    const containerRect = container.getBoundingClientRect();
+                    
+                    let newX = touch.clientX - containerRect.left - dragOffsetX;
+                    let newY = touch.clientY - containerRect.top - dragOffsetY;
+                    
+             
+                    const nodeWidth = draggedNode.offsetWidth;
+                    const nodeHeight = draggedNode.offsetHeight;
+                    
+                    const padding = 20;
+                    newX = Math.max(padding, Math.min(newX, containerRect.width - nodeWidth - padding));
+                    newY = Math.max(padding, Math.min(newY, containerRect.height - nodeHeight - padding));
+                    
+                    draggedNode.style.left = `${newX}px`;
+                    draggedNode.style.top = `${newY}px`;
+                    
+                    const dragDistance = Math.sqrt(
+                        Math.pow(touch.clientX - dragStartX, 2) + 
+                        Math.pow(touch.clientY - dragStartY, 2)
+                    );
+                    
+                    if (dragDistance > 10) {
+                        hasMoved = true;
+                    }
+                }
+            });
+            
+            document.addEventListener('touchend', function(e) {
+                if (isDragging && draggedNode) {
+                    const dragDuration = new Date().getTime() - clickStartTime;
+                    
+                    // 重置z-index
+                    draggedNode.style.zIndex = '';
+                    
+                    // Get node information
+                    const nodeId = parseInt(draggedNode.getAttribute('data-id'));
+                    const nodeLevel = parseInt(draggedNode.getAttribute('class').match(/level(\d+)/)[1]);
+                    const node = visualizationData.nodes.find(n => n.id === nodeId);
+                    
+                    // Only trigger click actions if it was a genuine click (short duration, minimal movement)
+                    if (!hasMoved && dragDuration < 300 && node) {
+                        // Verify node level
+                        if (nodeLevel !== node.level) {
+                            draggedNode.className = `node level${node.level}`;
+                        }
+                        
+                        // Perform click action based on node level
+                        if (node.level === 1) {
+                            expandNode(nodeId);
+                        } else if (node.level === 2) {
+                            const hasChildren = node.children && node.children.length > 0;
+                            
+                            if (hasChildren) {
+                                expandNode(nodeId);
+                            } else {
+                                showNodeWithQuotes(node);
+                            }
+                        } else if (node.level === 3) {
+                            showNodeWithQuotes(node);
+                        }
+                    }
+                    
+                    // Reset drag state
+                    isDragging = false;
+                    draggedNode = null;
+                    hasMoved = false;
+                }
+            });
+            
+            // Add global mouse up event listener for drag end AND click detection
+            document.addEventListener('mouseup', function(e) {
+                if (isDragging && draggedNode) {
+                    const dragDuration = new Date().getTime() - clickStartTime;
+                    
+                    // Reset z-index
+                    draggedNode.style.zIndex = '';
+                    
+                    // Get node information
+                    const nodeId = parseInt(draggedNode.getAttribute('data-id'));
+                    const nodeLevel = parseInt(draggedNode.getAttribute('class').match(/level(\d+)/)[1]);
+                    const node = visualizationData.nodes.find(n => n.id === nodeId);
+                    
+                    // Only trigger click actions if it was a genuine click (short duration, minimal movement)
+                    if (!hasMoved && dragDuration < 300 && node) {
+                        // Verify node level
+                        if (nodeLevel !== node.level) {
+                            draggedNode.className = `node level${node.level}`;
+                        }
+                        
+                        // Perform click action based on node level
+                        if (node.level === 1) {
+                            expandNode(nodeId);
+                        } else if (node.level === 2) {
+                            const hasChildren = node.children && node.children.length > 0;
+                            
+                            if (hasChildren) {
+                                expandNode(nodeId);
+                            } else {
+                                showNodeWithQuotes(node);
+                            }
+                        } else if (node.level === 3) {
+                            showNodeWithQuotes(node);
+                        }
+                    }
+                    
+                    // Reset dragging state
+                    isDragging = false;
+                    draggedNode = null;
+                    hasMoved = false;
+                }
+            });
+            
+            window.addEventListener('resize', () => {
+                // Recalculate positions on window resize
+                createNodes();
+            });
+        });
+    </script>
+</body>
+</html> 
